@@ -124,118 +124,167 @@ function PlanDisplay({ plan }) {
 async function generatePDF(lead, quiz, plan) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit:"mm", format:"a4" });
-  const W=210, M=20, TW=W-M*2;
+  const W=210, M=22, TW=W-M*2;
   let y=0;
-  const NP = () => { doc.addPage(); y=20; };
-  const chk = (h=15) => { if(y+h>275)NP(); };
-
-  // helpers
-  const txt = (t,x,size,color,style="normal") => {
-    doc.setFontSize(size); doc.setTextColor(...color); doc.setFont("helvetica",style); doc.text(t,x,y);
+  const NP = () => {
+    // footer on every page
+    doc.setFillColor(18,18,18); doc.rect(0,285,210,12,"F");
+    doc.setFontSize(8); doc.setTextColor(100,100,100); doc.setFont("helvetica","normal");
+    doc.text(BRAND, M, 292); doc.text(IG_HANDLE, W-M, 292, {align:"right"});
+    doc.addPage(); y=24;
+    // header bar on new page
+    doc.setFillColor(18,18,18); doc.rect(0,0,210,14,"F");
+    doc.setFillColor(255,165,0); doc.rect(0,13,210,1,"F");
+    doc.setFontSize(8); doc.setTextColor(255,165,0); doc.setFont("helvetica","bold");
+    doc.text(BRAND, M, 9);
+    doc.setTextColor(120,120,120); doc.setFont("helvetica","normal");
+    doc.text("12-WEEK WORKOUT PLAN", W-M, 9, {align:"right"});
   };
-  const ln = (h=7) => { y+=h; };
+  const chk = (h=15) => { if(y+h>278) NP(); };
+  const ln = (h=6) => { y+=h; };
 
-  // ── COVER ──
+  const drawSectionBar = (label) => {
+    chk(16);
+    doc.setFillColor(255,165,0); doc.rect(M,y-4,3,10,"F");
+    doc.setFontSize(9); doc.setTextColor(255,165,0); doc.setFont("helvetica","bold");
+    doc.text(label.toUpperCase(), M+6, y+3);
+    doc.setDrawColor(40,40,40); doc.setLineWidth(0.3);
+    doc.line(M+6 + doc.getTextWidth(label.toUpperCase())+4, y+1, W-M, y+1);
+    ln(12);
+  };
+
+  const drawDayHeader = (text) => {
+    chk(14);
+    doc.setFillColor(28,28,28); doc.rect(M,y-4,TW,10,"F");
+    doc.setFillColor(255,140,0); doc.rect(M,y-4,2,10,"F");
+    doc.setFontSize(10); doc.setTextColor(255,200,100); doc.setFont("helvetica","bold");
+    doc.text(text, M+6, y+2);
+    ln(11);
+  };
+
+  const drawExerciseRow = (text, isAlt) => {
+    chk(8);
+    if(isAlt){ doc.setFillColor(22,22,22); doc.rect(M,y-3,TW,7,"F"); }
+    // split exercise name from sets/reps
+    const match = text.match(/^(.*?)\s*-\s*(\d+sets.*)/i);
+    if(match){
+      doc.setFontSize(9.5); doc.setTextColor(220,220,220); doc.setFont("helvetica","normal");
+      doc.text(match[1].trim(), M+5, y+1);
+      doc.setTextColor(255,165,0); doc.setFont("helvetica","bold");
+      doc.text(match[2].trim(), W-M, y+1, {align:"right"});
+    } else {
+      doc.setFontSize(9.5); doc.setTextColor(210,210,210); doc.setFont("helvetica","normal");
+      const wrapped = doc.splitTextToSize(text, TW-4);
+      doc.text(wrapped[0]||"", M+5, y+1);
+    }
+    ln(8);
+  };
+
+  // ── COVER PAGE ──
   doc.setFillColor(10,10,10); doc.rect(0,0,210,297,"F");
-  // gold accent bar
-  doc.setFillColor(255,165,0); doc.rect(0,0,210,4,"F");
-  y=60;
-  doc.setFontSize(11); doc.setTextColor(255,165,0); doc.setFont("helvetica","bold");
-  doc.text("⚡ PERSONALIZED TRAINING PROGRAM ⚡",W/2,y,"center"); ln(14);
-  doc.setFontSize(32); doc.setTextColor(255,255,255); doc.setFont("helvetica","bold");
-  doc.text("YOUR 12-WEEK",W/2,y,"center"); ln(14);
-  doc.text("WORKOUT PLAN",W/2,y,"center"); ln(20);
-  doc.setFontSize(13); doc.setTextColor(180,180,180); doc.setFont("helvetica","normal");
-  doc.text("A personalized starter program built around your goals,",W/2,y,"center"); ln(7);
-  doc.text("schedule, and equipment.",W/2,y,"center"); ln(24);
-  doc.setFontSize(18); doc.setTextColor(255,165,0); doc.setFont("helvetica","bold");
-  doc.text(BRAND,W/2,y,"center"); ln(6);
-  doc.setFontSize(12); doc.setTextColor(120,120,120);
-  doc.text(IG_HANDLE,W/2,y,"center"); ln(30);
+  // top gold bar
+  doc.setFillColor(255,165,0); doc.rect(0,0,210,6,"F");
+  // diagonal accent shape
+  doc.setFillColor(20,20,20); doc.rect(0,6,210,100,"F");
+  // brand
+  y=38;
+  doc.setFontSize(10); doc.setTextColor(255,165,0); doc.setFont("helvetica","bold");
+  doc.text("PERSONALIZED TRAINING PROGRAM", W/2, y, {align:"center"}); ln(6);
+  doc.setDrawColor(255,165,0); doc.setLineWidth(0.4);
+  doc.line(W/2-30, y, W/2+30, y); ln(16);
+  // main title
+  doc.setFontSize(38); doc.setTextColor(255,255,255); doc.setFont("helvetica","bold");
+  doc.text("YOUR", W/2, y, {align:"center"}); ln(14);
+  doc.setFontSize(28); doc.setTextColor(255,165,0);
+  doc.text("12-WEEK", W/2, y, {align:"center"}); ln(12);
+  doc.setFontSize(38); doc.setTextColor(255,255,255);
+  doc.text("WORKOUT PLAN", W/2, y, {align:"center"}); ln(20);
+  doc.setFillColor(15,15,15); doc.rect(0,y-4,210,100,"F");
+  ln(16);
+  doc.setFontSize(12); doc.setTextColor(170,170,170); doc.setFont("helvetica","normal");
+  doc.text("A personalized program built around your goals,", W/2, y, {align:"center"}); ln(7);
+  doc.text("schedule, and available equipment.", W/2, y, {align:"center"}); ln(24);
+  // brand box
+  doc.setFillColor(255,165,0); doc.roundedRect(W/2-35, y-5, 70, 18, 3, 3, "F");
+  doc.setFontSize(14); doc.setTextColor(0,0,0); doc.setFont("helvetica","bold");
+  doc.text(BRAND, W/2, y+5, {align:"center"}); ln(22);
+  doc.setFontSize(11); doc.setTextColor(120,120,120); doc.setFont("helvetica","normal");
+  doc.text(IG_HANDLE, W/2, y, {align:"center"}); ln(20);
   // divider
-  doc.setDrawColor(255,165,0); doc.setLineWidth(.5); doc.line(M,y,W-M,y); ln(12);
-  doc.setFontSize(11); doc.setTextColor(160,160,160); doc.setFont("helvetica","normal");
-  doc.text(`Prepared for: ${lead.email}`,W/2,y,"center"); ln(7);
-  doc.text(`Generated: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}`,W/2,y,"center");
-  // bottom bar
-  doc.setFillColor(255,165,0); doc.rect(0,293,210,4,"F");
+  doc.setDrawColor(40,40,40); doc.setLineWidth(0.5); doc.line(M, y, W-M, y); ln(10);
+  doc.setFontSize(10); doc.setTextColor(140,140,140);
+  doc.text(`Prepared for: ${lead.email}`, W/2, y, {align:"center"}); ln(7);
+  doc.text(`Generated: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}`, W/2, y, {align:"center"});
+  // bottom gold bar
+  doc.setFillColor(255,165,0); doc.rect(0,291,210,6,"F");
 
   // ── PROFILE PAGE ──
   NP();
-  doc.setFillColor(10,10,10); doc.rect(0,0,210,297,"F");
-  doc.setFillColor(255,165,0); doc.rect(0,0,210,4,"F");
-  doc.setFontSize(9); doc.setTextColor(255,165,0); doc.setFont("helvetica","bold");
-  doc.text("YOUR PROFILE",M,y); ln(10);
-  doc.setFontSize(20); doc.setTextColor(255,255,255); doc.setFont("helvetica","bold");
-  doc.text("About You",M,y); ln(12);
+  drawSectionBar("Your Profile");
   const profileRows=[
-    ["Goal",quiz.goal],["Experience",quiz.experience],["Training Days",quiz.days],
-    ["Location",quiz.location],["Session Length",quiz.sessionLength],
-    ["Focus Muscles",quiz.focusMuscles||"Overall"],["Injuries",quiz.injuries||"None"],
-    ["Equipment",quiz.equipment||"Standard gym"],
+    ["Goal", quiz.goal], ["Experience", quiz.experience],
+    ["Training Days", quiz.days], ["Location", quiz.location],
+    ["Session Length", quiz.sessionLength],
+    ["Focus Muscles", quiz.focusMuscles||"Overall balanced"],
+    ["Injuries", quiz.injuries||"None"], ["Equipment", quiz.equipment||"Standard gym"],
   ];
-  profileRows.forEach(([k,v])=>{
-    if(!v)return; chk(10);
-    doc.setFontSize(9); doc.setTextColor(255,165,0); doc.setFont("helvetica","bold"); doc.text(k.toUpperCase(),M,y);
-    doc.setFontSize(11); doc.setTextColor(220,220,220); doc.setFont("helvetica","normal"); doc.text(String(v),M+50,y); ln(9);
+  profileRows.forEach(([k,v],i)=>{
+    if(!v) return; chk(10);
+    const isAlt = i%2===0;
+    if(isAlt){ doc.setFillColor(22,22,22); doc.rect(M,y-4,TW,10,"F"); }
+    doc.setFontSize(9); doc.setTextColor(255,165,0); doc.setFont("helvetica","bold");
+    doc.text(k.toUpperCase(), M+4, y+2);
+    doc.setFontSize(10); doc.setTextColor(220,220,220); doc.setFont("helvetica","normal");
+    doc.text(String(v), M+55, y+2);
+    ln(11);
   });
-  doc.setFillColor(255,165,0); doc.rect(0,293,210,4,"F");
 
   // ── PLAN PAGES ──
-  const planSections = plan.split("\n\n").filter(Boolean);
   NP();
-  doc.setFillColor(10,10,10); doc.rect(0,0,210,297,"F");
-  doc.setFillColor(255,165,0); doc.rect(0,0,210,4,"F");
-  for (const section of planSections) {
-    const sLines = section.split("\n").filter(Boolean);
-    if(!sLines.length)continue;
-    const heading = /^[A-Z][A-Z\s]{4,}/.test(sLines[0]);
-    if(heading){
-      chk(20);
-      doc.setFontSize(9); doc.setTextColor(255,165,0); doc.setFont("helvetica","bold");
-      doc.text(sLines[0],M,y); ln(8);
-      sLines.slice(1).forEach(l=>{ chk(8); renderPDFLine(doc,l,M,y,TW); ln(7); });
-    } else {
-      sLines.forEach(l=>{ chk(8); renderPDFLine(doc,l,M,y,TW); ln(7); });
+  const lines = plan.split("\n").filter(Boolean);
+  let exRowCount = 0;
+  for (const line of lines) {
+    const isHeading = /^[A-Z][A-Z\s]{4,}/.test(line) && line.length < 60;
+    const isDay = /^Day\s*\d|^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/i.test(line);
+    const isEx = /\d+\s*sets|\d+\s*[x×]\s*\d+/i.test(line);
+    if(isHeading){ ln(4); drawSectionBar(line); exRowCount=0; }
+    else if(isDay){ drawDayHeader(line); exRowCount=0; }
+    else if(isEx){ drawExerciseRow(line, exRowCount%2===0); exRowCount++; }
+    else {
+      chk(8);
+      doc.setFontSize(9.5); doc.setTextColor(170,170,170); doc.setFont("helvetica","normal");
+      const wrapped = doc.splitTextToSize(line, TW);
+      wrapped.forEach(wl=>{ chk(7); doc.text(wl, M, y); ln(6); });
     }
-    ln(4);
-    if(y>250)NP();
   }
 
   // ── CTA PAGE ──
   NP();
-  doc.setFillColor(10,10,10); doc.rect(0,0,210,297,"F");
-  doc.setFillColor(30,144,255); doc.rect(0,0,210,4,"F");
+  doc.setFillColor(8,8,20); doc.rect(0,14,210,271,"F");
+  doc.setFillColor(30,100,255); doc.rect(0,13,210,1,"F");
   y=50;
-  doc.setFontSize(9); doc.setTextColor(30,144,255); doc.setFont("helvetica","bold");
-  doc.text("READY TO LEVEL UP?",W/2,y,"center"); ln(12);
-  doc.setFontSize(22); doc.setTextColor(255,255,255); doc.setFont("helvetica","bold");
-  doc.text("This plan is your foundation.",W/2,y,"center"); ln(11);
-  doc.text("Coaching is your accelerator.",W/2,y,"center"); ln(18);
-  doc.setFontSize(12); doc.setTextColor(170,170,170); doc.setFont("helvetica","normal");
-  const ctaLines=[
-    "Having a plan is great — having a coach in your corner",
-    "is what actually drives real results.",
-    "","Follow me on Instagram for daily tips and motivation,",
-    "or DM me directly if you want a custom program.",
-  ];
-  ctaLines.forEach(l=>{ doc.text(l,W/2,y,"center"); ln(7); });
-  ln(16);
-  doc.setFontSize(14); doc.setTextColor(30,144,255); doc.setFont("helvetica","bold");
-  doc.text(IG_HANDLE,W/2,y,"center"); ln(10);
-  doc.setFontSize(11); doc.setTextColor(150,150,150); doc.setFont("helvetica","normal");
-  doc.text("DM me the word PLAN to get started.",W/2,y,"center");
-  doc.setFillColor(30,144,255); doc.rect(0,293,210,4,"F");
+  doc.setFontSize(10); doc.setTextColor(100,150,255); doc.setFont("helvetica","bold");
+  doc.text("READY TO LEVEL UP?", W/2, y, {align:"center"}); ln(5);
+  doc.setDrawColor(100,150,255); doc.setLineWidth(0.3); doc.line(W/2-25,y,W/2+25,y); ln(16);
+  doc.setFontSize(24); doc.setTextColor(255,255,255); doc.setFont("helvetica","bold");
+  doc.text("This plan is your", W/2, y, {align:"center"}); ln(11);
+  doc.setTextColor(100,180,255);
+  doc.text("foundation.", W/2, y, {align:"center"}); ln(11);
+  doc.setTextColor(255,255,255);
+  doc.text("Coaching is your", W/2, y, {align:"center"}); ln(11);
+  doc.setTextColor(100,180,255);
+  doc.text("accelerator.", W/2, y, {align:"center"}); ln(20);
+  doc.setFontSize(11); doc.setTextColor(160,180,210); doc.setFont("helvetica","normal");
+  ["Having a plan is great — having a coach in your corner","is what actually drives real results.","","Follow me on Instagram for daily tips,","or DM me directly to ask about coaching."].forEach(l=>{ doc.text(l,W/2,y,{align:"center"}); ln(7); });
+  ln(14);
+  doc.setFillColor(30,100,255); doc.roundedRect(W/2-40,y-5,80,18,3,3,"F");
+  doc.setFontSize(13); doc.setTextColor(255,255,255); doc.setFont("helvetica","bold");
+  doc.text(IG_HANDLE, W/2, y+5, {align:"center"}); ln(22);
+  doc.setFontSize(11); doc.setTextColor(120,140,180); doc.setFont("helvetica","normal");
+  doc.text("DM the word PLAN to get started.", W/2, y, {align:"center"});
+  doc.setFillColor(30,100,255); doc.rect(0,291,210,6,"F");
 
   return doc.output("datauristring");
-}
-
-function renderPDFLine(doc,line,x,y,tw){
-  const isDay=/^Day\s*\d|^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/i.test(line);
-  const isEx=/\d+\s*[x×]\s*\d+|\d+\s*sets/i.test(line);
-  if(isDay){ doc.setFontSize(10); doc.setTextColor(255,200,100); doc.setFont("helvetica","bold"); doc.text(line,x,y); }
-  else if(isEx){ doc.setFontSize(10); doc.setTextColor(200,200,200); doc.setFont("helvetica","normal"); doc.text(line.substring(0,80),x+4,y); }
-  else { doc.setFontSize(10); doc.setTextColor(170,170,170); doc.setFont("helvetica","normal"); const wrapped=doc.splitTextToSize(line,tw); doc.text(wrapped[0]||"",x,y); }
 }
 
 // ─── EMAIL SENDER ─────────────────────────────────────────
@@ -285,14 +334,14 @@ function Landing({ onStart }) {
     <div style={S.hero}>
       <span style={S.badge}>Free Tool</span>
       <h1 style={S.h1}>Your Free<br/><span style={{ borderBottom:"3px solid #fff" }}>12-Week Workout Plan</span></h1>
-      <p style={{ fontSize:"clamp(1rem,2.5vw,1.2rem)", color:"#aaa", maxWidth:520, margin:"0 auto 40px", lineHeight:1.7 }}>Answer a few questions and get a personalized training plan — emailed straight to your inbox as a PDF.</p>
+      <p style={{ fontSize:"clamp(1rem,2.5vw,1.2rem)", color:"#aaa", maxWidth:520, margin:"0 auto 40px", lineHeight:1.7 }}>Answer a few questions and get a personalized training plan — instantly generated and ready to download as a PDF.</p>
       <div style={{ display:"flex", flexWrap:"wrap", gap:10, justifyContent:"center", marginBottom:44 }}>
-        {["Personalized to your goals","PDF emailed to you instantly","Progressive overload built-in","Beginner & intermediate friendly"].map(p=>(
+        {["Personalized to your goals","Download your PDF instantly","Progressive overload built-in","Beginner & intermediate friendly"].map(p=>(
           <span key={p} style={{ background:"#1a1a1a", border:"1px solid #333", borderRadius:20, padding:"8px 18px", fontSize:13, color:"#ccc" }}>✓ {p}</span>
         ))}
       </div>
       <button style={S.btn} onClick={onStart}>Get My Free Plan →</button>
-      <p style={{ fontSize:12, color:"#555", marginTop:16 }}>No credit card. No spam. PDF delivered free.</p>
+      <p style={{ fontSize:12, color:"#555", marginTop:16 }}>No credit card. No spam. Download your plan free.</p>
     </div>
   );
 }
@@ -305,14 +354,13 @@ function LeadForm({ onNext }) {
       <div style={S.wrap}><ProgressBar step="lead"/>
         <div style={S.card}>
           <p style={{ ...S.badge, marginBottom:20 }}>Step 1 of 2</p>
-          <h2 style={S.ttl}>Where should we send your PDF?</h2>
-          <p style={{ color:"#888", marginBottom:32, lineHeight:1.6 }}>We'll email your full 12-week plan as a PDF straight to your inbox.</p>
+          <h2 style={S.ttl}>Let's build your free plan</h2>
+          <p style={{ color:"#888", marginBottom:32, lineHeight:1.6 }}>Enter your details below to unlock your personalized 12-week program. Your PDF will be ready to download instantly.</p>
           <div style={{ marginBottom:20 }}><label style={S.lbl}>Email Address</label><input style={S.inp} type="email" placeholder="you@example.com" value={email} onChange={e=>setEmail(e.target.value)}/></div>
           <div style={{ marginBottom:28 }}><label style={S.lbl}>Instagram Handle</label><input style={S.inp} placeholder="@yourhandle" value={ig} onChange={e=>setIg(e.target.value)}/></div>
           {err&&<p style={S.err}>{err}</p>}
           <button style={{ ...S.btn, width:"100%" }} onClick={go}>Continue →</button>
-          <p style={{ fontSize:12, color:"#555", marginTop:14, textAlign:"center" }}>Your info is safe. We hate spam too.</p>
-        </div>
+          <p style={{ fontSize:12, color:"#555", marginTop:14, textAlign:"center" }}>Your info is safe. We hate spam too.</p>        </div>
       </div>
     </div>
   );
@@ -356,7 +404,7 @@ function Questionnaire({ onNext }) {
 }
 
 function Generating({ statusMsg }) {
-  const steps=["Analyzing your goals...","Selecting your workout split...","Building 12 weeks of programming...","Creating your PDF...","Sending to your inbox..."];
+  const steps=["Analyzing your goals...","Selecting your workout split...","Building 12 weeks of programming...","Creating your PDF...","Finalizing your plan..."];
   const [cur,setCur]=useState(0);
   useEffect(()=>{ const iv=setInterval(()=>setCur(c=>Math.min(c+1,steps.length-1)),1200); return()=>clearInterval(iv); },[]);
   return (
@@ -364,7 +412,7 @@ function Generating({ statusMsg }) {
       <div style={{ textAlign:"center" }}>
         <div style={{ fontSize:48, marginBottom:24 }}>⚡</div>
         <h2 style={S.ttl}>Building Your Plan</h2>
-        <p style={{ color:"#888", marginBottom:40 }}>Creating your PDF and sending it to your inbox — give us ~20 seconds.</p>
+        <p style={{ color:"#888", marginBottom:40 }}>Hang tight — your personalized plan is being built. This takes about 20 seconds.</p>
         <div style={{ maxWidth:340, margin:"0 auto" }}>
           {steps.map((s,i)=>(
             <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 0", opacity:i<=cur?1:.2, transition:"opacity .4s" }}>
@@ -427,10 +475,10 @@ function StatsBanner({ quiz }) {
 function ConfirmBanner({ email }) {
   return (
     <div style={{ background:"linear-gradient(135deg,rgba(0,80,0,.3),rgba(0,40,0,.2))", border:"1px solid rgba(0,200,100,.3)", borderRadius:12, padding:"24px 28px", marginBottom:28, display:"flex", alignItems:"center", gap:18 }}>
-      <div style={{ fontSize:36 }}>📩</div>
+      <div style={{ fontSize:36 }}>✅</div>
       <div>
-        <div style={{ fontWeight:800, fontSize:15, color:"#00E676", marginBottom:4 }}>PDF Sent to Your Inbox!</div>
-        <div style={{ fontSize:13, color:"#aaa", lineHeight:1.6 }}>Your full 12-week plan has been emailed to <strong style={{ color:"#fff" }}>{email}</strong>. Check your spam folder if you don't see it within a minute.</div>
+        <div style={{ fontWeight:800, fontSize:15, color:"#00E676", marginBottom:4 }}>Your Plan is Ready to Download!</div>
+        <div style={{ fontSize:13, color:"#aaa", lineHeight:1.6 }}>Click the button below to download your full 12-week PDF plan. A confirmation has also been sent to <strong style={{ color:"#fff" }}>{email}</strong>.</div>
       </div>
     </div>
   );
@@ -449,28 +497,54 @@ function Results({ plan, lead, quiz, emailSent }) {
 
         {emailSent && <ConfirmBanner email={lead.email}/>}
 
-        {/* Download PDF Button */}
-        <div style={{ textAlign:"center", marginBottom:32 }}>
-          <button onClick={async () => {
-            if (!window.jspdf) {
-              await new Promise((res,rej) => {
-                const sc = document.createElement("script");
-                sc.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
-                sc.onload = res; sc.onerror = rej; document.head.appendChild(sc);
-              });
-            }
-            const pdfUri = await generatePDF(lead, quiz, plan);
-            const link = document.createElement("a");
-            link.href = pdfUri;
-            link.download = "Nandotrains_12Week_Plan.pdf";
-            link.click();
-          }} style={{ background:"linear-gradient(135deg,#FFD700,#FF6A00)", color:"#000", border:"none", borderRadius:8, padding:"16px 40px", fontSize:16, fontWeight:900, cursor:"pointer", letterSpacing:1, textTransform:"uppercase", boxShadow:"0 0 24px rgba(255,160,0,0.4)" }}
-            onMouseEnter={e => e.currentTarget.style.opacity="0.85"}
-            onMouseLeave={e => e.currentTarget.style.opacity="1"}
-          >
-            ⬇️ Download Your PDF Plan
-          </button>
-          <p style={{ fontSize:12, color:"#555", marginTop:10 }}>Save it to your phone or print it out</p>
+        {/* Download PDF Button - Rose Gold */}
+        <div style={{ position:"relative", borderRadius:16, overflow:"hidden", marginBottom:32, padding:"44px 32px", background:"linear-gradient(160deg,#0a0a0a 0%,#1a0a0d 50%,#0a0a0a 100%)", border:"1px solid rgba(183,110,121,0.35)", textAlign:"center" }}>
+          <style>{`
+            @keyframes dlRoseGlow{0%,100%{box-shadow:0 0 12px rgba(183,110,121,.3);border-color:rgba(183,110,121,.4)}50%{box-shadow:0 0 28px rgba(212,175,55,.4);border-color:rgba(212,175,55,.5)}}
+            @keyframes dlRoseShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+            @keyframes dlRoseAura{0%,100%{opacity:.15}50%{opacity:.3}}
+            @keyframes dlRoseRim{0%,100%{opacity:.5}50%{opacity:.9}}
+            @keyframes dlRoseFadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+            @keyframes dlBtnGlow{0%,100%{box-shadow:0 0 12px rgba(183,110,121,.3)}50%{box-shadow:0 0 28px rgba(212,175,55,.5)}}
+          `}</style>
+
+          <div style={{ position:"absolute", inset:0, pointerEvents:"none", overflow:"hidden" }}>
+            {[...Array(8)].map((_,i)=>{
+              const colors=["#D4AF37","#B76E79","#C9956C","#E8C4B8"];
+              return <div key={i} style={{ position:"absolute", bottom:0, left:`${10+i*11}%`, width:3, height:6, borderRadius:"50%", background:colors[i%4], filter:"blur(1px)", animation:`roseParticle ${1.8+i*.4}s ease-in ${i*.5}s infinite` }}/>;
+            })}
+            <div style={{ position:"absolute", inset:0, background:"radial-gradient(ellipse 70% 50% at 50% 100%,rgba(183,110,121,.1) 0%,transparent 70%)", animation:"dlRoseAura 3s ease-in-out infinite" }}/>
+            <div style={{ position:"absolute", top:0, left:"15%", right:"15%", height:1, background:"linear-gradient(90deg,transparent,#B76E79,#D4AF37,#B76E79,transparent)", animation:"dlRoseRim 2.5s ease-in-out infinite" }}/>
+          </div>
+
+          <div style={{ position:"relative", animation:"dlRoseFadeUp 0.6s ease forwards" }}>
+            <div style={{ fontSize:11, fontWeight:700, letterSpacing:4, color:"#B76E79", textTransform:"uppercase", marginBottom:14 }}>Your Plan is Ready</div>
+            <h3 style={{ fontSize:"clamp(1.4rem,4vw,1.9rem)", fontWeight:900, marginBottom:10, lineHeight:1.2 }}>
+              <span style={{ background:"linear-gradient(90deg,#D4AF37,#B76E79,#D4AF37)", backgroundSize:"200% auto", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", animation:"dlRoseShift 3s linear infinite" }}>Download Your 12-Week Plan</span>
+            </h3>
+            <p style={{ color:"#888", fontSize:14, marginBottom:28, lineHeight:1.6, maxWidth:400, margin:"0 auto 28px" }}>Your personalized program is ready. Save it to your phone, tablet, or print it out.</p>
+
+            <button onClick={async () => {
+              if (!window.jspdf) {
+                await new Promise((res,rej) => {
+                  const sc = document.createElement("script");
+                  sc.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+                  sc.onload = res; sc.onerror = rej; document.head.appendChild(sc);
+                });
+              }
+              const pdfUri = await generatePDF(lead, quiz, plan);
+              const link = document.createElement("a");
+              link.href = pdfUri;
+              link.download = "Nandotrains_12Week_Plan.pdf";
+              link.click();
+            }} style={{ background:"linear-gradient(135deg,#D4AF37,#B76E79)", color:"#fff", border:"none", borderRadius:8, padding:"16px 44px", fontSize:15, fontWeight:800, cursor:"pointer", letterSpacing:1, textTransform:"uppercase", animation:"dlBtnGlow 2.5s ease-in-out infinite", display:"inline-flex", alignItems:"center", gap:10 }}
+              onMouseEnter={e=>{e.currentTarget.style.opacity="0.85"}}
+              onMouseLeave={e=>{e.currentTarget.style.opacity="1"}}
+            >
+              ⬇️ Download PDF Plan
+            </button>
+            <p style={{ fontSize:12, color:"#444", marginTop:14 }}>Free — no credit card required</p>
+          </div>
         </div>
 
         <StatsBanner quiz={quiz}/>
@@ -513,7 +587,7 @@ function Results({ plan, lead, quiz, emailSent }) {
                   onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.borderColor="rgba(0,191,255,.5)";}}>DM for Coaching</button>
               </a>
             </div>
-            <p style={{ fontSize:12, color:"#1E4F6B", marginTop:24 }}>📧 PDF delivered to {lead.email}</p>
+            <p style={{ fontSize:12, color:"#1E4F6B", marginTop:24 }}>💪 Ready to start? Download your plan above and get to work.</p>
           </div>
         </div>
         <p style={{ textAlign:"center", fontSize:12, color:"#333", marginTop:32 }}>⚠️ This plan is for educational purposes only. Consult a physician before starting any new exercise program.</p>
@@ -578,7 +652,7 @@ KEY COACHING TIPS
       setStatusMsg("Generating your plan...");
       const res  = await fetch("/api/generate",{
         method:"POST", headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({ prompt }),
+       body: JSON.stringify({ prompt }),
       });
       const json = await res.json();
       const text = json.content?.[0]?.text || "Could not generate plan.";
