@@ -576,9 +576,9 @@ KEY COACHING TIPS
     try {
       // 1. Generate plan
       setStatusMsg("Generating your plan...");
-      const res  = await fetch("https://api.anthropic.com/v1/messages",{
+      const res  = await fetch("/api/generate",{
         method:"POST", headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:4000, messages:[{role:"user",content:prompt}] }),
+        body:JSON.stringify({ prompt }),
       });
       const json = await res.json();
       const text = json.content?.[0]?.text || "Could not generate plan.";
