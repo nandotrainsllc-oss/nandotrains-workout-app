@@ -8,6 +8,8 @@ import { DMConsole } from './modules/DMConsole';
 import { ContentEngine } from './modules/ContentEngine';
 import { Scoreboard } from './modules/Scoreboard';
 import { Strategist } from './modules/Strategist';
+import { SyncPanel } from './modules/SyncPanel';
+import type { SyncStatus } from './modules/SyncPanel';
 
 type Tab = 'today' | 'pipeline' | 'call' | 'dm' | 'content' | 'score';
 
@@ -20,9 +22,18 @@ const TABS: { key: Tab; label: string }[] = [
   { key: 'score', label: 'SCOREBOARD' },
 ];
 
+const SYNC_ICONS: Record<SyncStatus, string> = {
+  idle: '⟳',
+  busy: '⟳ …',
+  ok: '⟳ ✓',
+  error: '⟳ ⚠',
+};
+
 export default function Dashboard() {
   const [tab, setTab] = useState<Tab>('today');
   const [aiOpen, setAiOpen] = useState(false);
+  const [syncOpen, setSyncOpen] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
 
   return (
     <StoreProvider>
@@ -38,6 +49,9 @@ export default function Dashboard() {
               </button>
             ))}
           </nav>
+          <button className="ssi-ai-toggle" onClick={() => setSyncOpen(true)}>
+            {SYNC_ICONS[syncStatus]} SYNC
+          </button>
           <button className={`ssi-ai-toggle${aiOpen ? ' open' : ''}`} onClick={() => setAiOpen((o) => !o)}>
             ⚡ STRATEGIST
           </button>
@@ -53,6 +67,7 @@ export default function Dashboard() {
           </main>
           {aiOpen && <Strategist onClose={() => setAiOpen(false)} />}
         </div>
+        {syncOpen && <SyncPanel onClose={() => setSyncOpen(false)} setStatus={setSyncStatus} />}
       </div>
     </StoreProvider>
   );

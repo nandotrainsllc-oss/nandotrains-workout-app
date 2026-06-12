@@ -109,6 +109,8 @@ export interface WeeklyReview {
 export interface Settings {
   apiKey: string;
   model: string;
+  syncUrl: string; // Google Apps Script web-app URL (see apps-script/SSI_Sync.gs)
+  lastSync: string | null; // ISO
 }
 
 export interface ChatMessage {

@@ -24,7 +24,7 @@ function defaultState(): AppState {
     posts: [],
     calls: [],
     reviews: {},
-    settings: { apiKey: '', model: 'claude-sonnet-4-6' },
+    settings: { apiKey: '', model: 'claude-sonnet-4-6', syncUrl: '', lastSync: null },
     chat: [],
   };
 }
@@ -33,7 +33,9 @@ function loadState(): AppState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return defaultState();
-    return { ...defaultState(), ...(JSON.parse(raw) as AppState) };
+    const parsed = JSON.parse(raw) as AppState;
+    const defaults = defaultState();
+    return { ...defaults, ...parsed, settings: { ...defaults.settings, ...parsed.settings } };
   } catch {
     return defaultState();
   }
@@ -44,6 +46,7 @@ export interface Store {
   todayLog: DailyLog;
   bump: (key: CounterKey, delta?: number, date?: string) => void;
   upsertLead: (lead: Lead) => void;
+  importLeads: (leads: Lead[]) => void;
   touchLead: (id: string, event: string) => void;
   deleteLead: (id: string) => void;
   upsertPost: (post: ContentPost) => void;
@@ -82,6 +85,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           ...s,
           leads: exists ? s.leads.map((l) => (l.id === lead.id ? lead : l)) : [...s.leads, lead],
         };
+      }),
+    importLeads: (leads) =>
+      setState((s) => {
+        const existingNames = new Set(s.leads.map((l) => l.name.trim().toLowerCase()));
+        const existingIds = new Set(s.leads.map((l) => l.id));
+        const fresh = leads.filter(
+          (l) => !existingIds.has(l.id) && !existingNames.has(l.name.trim().toLowerCase()),
+        );
+        return fresh.length ? { ...s, leads: [...s.leads, ...fresh] } : s;
       }),
     touchLead: (id, event) =>
       setState((s) => ({
